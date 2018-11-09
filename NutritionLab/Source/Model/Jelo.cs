@@ -8,9 +8,12 @@ using System.Xml.Serialization;
 namespace NutritionLab.Source.Model
 {
     [Serializable, XmlRoot("Jelo")]
-    public class Jelo
+    public class Jelo : ICloneable
     {    
         public static Jelo TrenutnoJelo { get; set; }
+
+        [XmlAttribute(AttributeName = "Naziv")]
+        public string Naziv { get; set; }
 
         [XmlAttribute(AttributeName = "Tip")]
         public string Tip { get; set; }
@@ -20,6 +23,21 @@ namespace NutritionLab.Source.Model
 
         [XmlAttribute(AttributeName = "Kolicine")]
         public List<int> Kolicine { get; set; }
+
+        public int Kolicina
+        {
+            get
+            {
+                int sol = 0;
+
+                foreach(int x in this.Kolicine)
+                {
+                    sol += x;    
+                }
+
+                return sol;
+            }
+        }
 
         public double UgljeniHidrati
         {
@@ -92,16 +110,40 @@ namespace NutritionLab.Source.Model
 
         public Jelo()
         {
+            this.Naziv = "Naziv obroka...";
             this.Tip = "Dorucak";
             this.Namirnice = new List<Namirnica>();
             this.Kolicine = new List<int>();
         }
 
-        public Jelo(string tip)
+        public Jelo(string naziv, string tip)
         {
+            this.Naziv = naziv;
             this.Tip = tip;
             this.Namirnice = new List<Namirnica>();
             this.Kolicine = new List<int>();
+        }
+
+        public object Clone()
+        {
+            Jelo j = new Jelo();
+
+            j.Naziv = this.Naziv;
+            j.Tip = this.Tip;
+            j.Namirnice = new List<Namirnica>();
+            foreach (Namirnica n in this.Namirnice)
+            {
+                j.Namirnice.Add(n);
+            }
+
+            j.Kolicine = new List<int>();
+
+            foreach(int x in this.Kolicine)
+            {
+                j.Kolicine.Add(x);
+            }
+
+            return j;
         }
 
         public void DodajNamirnicu(Namirnica n, int kol)
@@ -122,7 +164,6 @@ namespace NutritionLab.Source.Model
             this.Namirnice.RemoveAt(ind);
             this.Kolicine.RemoveAt(ind);
         }
-
 
         /// <summary>
         ///  Enum za tipove jela

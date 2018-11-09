@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
 using System.Xml.Serialization;
 
 namespace NutritionLab
@@ -114,13 +115,13 @@ namespace NutritionLab
             PrikaziTrenutnoJelo();
         }
 
-        private void OsveziPieChartTrenutnoJelo()
+        private void OsveziChart(Chart ch, double uh, double mas, double pro)
         {
-            chart1.Series["s1"].Points.Clear();
-            chart1.Series["s1"].IsValueShownAsLabel = true;
-            chart1.Series["s1"].Points.AddXY("Ugljeni hidrati", Jelo.TrenutnoJelo.UgljeniHidrati);
-            chart1.Series["s1"].Points.AddXY("Masti", Jelo.TrenutnoJelo.Masti);
-            chart1.Series["s1"].Points.AddXY("Proteini", Jelo.TrenutnoJelo.Proteini);
+            ch.Series["s1"].Points.Clear();
+            ch.Series["s1"].IsValueShownAsLabel = true;
+            ch.Series["s1"].Points.AddXY("Ugljeni hidrati", uh);
+            ch.Series["s1"].Points.AddXY("Masti", mas);
+            ch.Series["s1"].Points.AddXY("Proteini", pro);
         }
 
         private void PrikaziTrenutnoJelo()
@@ -136,10 +137,11 @@ namespace NutritionLab
                 listView1.Items.Add(listViewItem);
             }
 
+            textBox3.Text = Jelo.TrenutnoJelo.Naziv;
             comboBox1.Text = Jelo.TrenutnoJelo.Tip.ToString();
             label1.Text = Jelo.TrenutnoJelo.Kalorije.ToString() + " kCal";
 
-            OsveziPieChartTrenutnoJelo();
+            OsveziChart(chart1, Jelo.TrenutnoJelo.UgljeniHidrati, Jelo.TrenutnoJelo.Masti, Jelo.TrenutnoJelo.Proteini);
         }
 
         private void button2_Click_1(object sender, EventArgs e)
@@ -196,8 +198,106 @@ namespace NutritionLab
 
         private void button5_Click(object sender, EventArgs e)
         {
-            Jelo.TrenutnoJelo = new Jelo();
+            Jelo.TrenutnoJelo = new Jelo("Naziv obroka...", comboBox1.Text);
             PrikaziTrenutnoJelo();
+        }
+
+        private void textBox3_TextChanged(object sender, EventArgs e)
+        {
+            Jelo.TrenutnoJelo.Naziv = textBox3.Text;
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            int ind = tabControl1.SelectedIndex;
+
+            Dijeta.TrenutnaDijeta.dodaj(ind, Jelo.TrenutnoJelo);
+
+            OsveziPrikazDijete(ind);
+        }
+
+        private ListView DohvatiListView(int ind)
+        {
+            ListView lv = null;
+            switch (ind)
+            {
+                case 0: lv = listViewPon; break;
+                case 1: lv = listViewUto; break;
+                case 2: lv = listViewSre; break;
+                case 3: lv = listViewCet; break;
+                case 4: lv = listViewPet; break;
+                case 5: lv = listViewSub; break;
+                case 6: lv = listViewNed; break;
+            }
+
+            return lv;
+        }
+
+        private Label DohvatiLabelu(int ind)
+        {
+            Label lb = null;
+
+            switch (ind)
+            {
+                case 0: lb = lbPon; break;
+                case 1: lb = lbUto; break;
+                case 2: lb = lbSre; break;
+                case 3: lb = lbCet; break;
+                case 4: lb = lbPet; break;
+                case 5: lb = lbSub; break;
+                case 6: lb = lbNed; break;
+            }
+
+            return lb;
+        }
+
+        private void OsveziPrikazDijete(int ind)
+        {
+            Label lb = DohvatiLabelu(ind);
+            ListView lv = DohvatiListView(ind);
+
+            lv.Items.Clear();
+
+            foreach (Jelo j in Dijeta.TrenutnaDijeta.Jela[ind])
+            {
+                string[] row = { j.Naziv, j.Tip, j.Kolicina.ToString(), j.UgljeniHidrati.ToString(), j.Masti.ToString(), j.Proteini.ToString(), j.Kalorije.ToString() };
+                var listViewItem = new ListViewItem(row);
+                lv.Items.Add(listViewItem);
+            }
+
+            lb.Text = Dijeta.TrenutnaDijeta.dohvatiKalorije(ind).ToString() + " kCal";
+
+            int kolicina = Dijeta.TrenutnaDijeta.dohvatiKolicinu(ind);
+
+            double procUh = (Dijeta.TrenutnaDijeta.dohvatiUH(ind) / (double) kolicina) * 100.0;
+            double procMas = (Dijeta.TrenutnaDijeta.dohvatiMasti(ind) / (double)kolicina) * 100.0;
+            double procPro = (Dijeta.TrenutnaDijeta.dohvatiProteine(ind) / (double)kolicina) * 100.0;
+
+            procUh = Math.Round(procUh, 1);
+            procMas = Math.Round(procMas, 1);
+            procPro = Math.Round(procPro, 1);
+
+            OsveziChart(chart2, procUh, procMas, procPro);
+        }
+
+        private void tabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            OsveziPrikazDijete(tabControl1.SelectedIndex);
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            int ind = tabControl1.SelectedIndex;
+
+            ListView lv = DohvatiListView(ind);
+
+            foreach (ListViewItem item in lv.SelectedItems)
+            {
+                Dijeta.TrenutnaDijeta.ukloni(ind, item.Index);
+                item.Remove();
+            }
+
+            OsveziPrikazDijete(ind);
         }
     }
 }
